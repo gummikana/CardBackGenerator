@@ -233,9 +233,11 @@ DEFINE_CONFIG_UI( ConfigRoom, CONFIG_ROOM );
 
 ConfigRoom room_config;
 
-void CycleColors( Triangle& t, int index )
+void CycleColors( Triangle& t, int index, ceng::CLGMRandom* randomizer )
 {
 	if( colors.empty() ) return;
+
+	if( randomizer ) index += randomizer->Random( 0, 3 );
 
 	ceng::CColorFloat cf;
 	cf.Set32( colors[index % colors.size()] );
@@ -295,7 +297,7 @@ void TriangleRooms()
 	const types::vector2 center_p = 0.5f * size;
 
 	ceng::CLGMRandom randomizer;
-	randomizer.SetSeed( config.seed );
+	randomizer.SetSeed( room_config.seed );
 
 	std::vector< types::vector2 > corners(4);
 
@@ -321,7 +323,7 @@ void TriangleRooms()
 		left_box.vert[2].Set( center_top.x - size.x * room_config.box_width_p, center_bottom.y );
 
 		left_box.color = GetRandomColor( &randomizer );
-		CycleColors( left_box, 0 );
+		CycleColors( left_box, 0, NULL );
 		AddTriangle( left_box );
 
 		Triangle right_box;
@@ -332,7 +334,7 @@ void TriangleRooms()
 		right_box.vert[2].Set( center_top.x + size.x * room_config.box_width_p, center_bottom.y );
 
 		right_box.color = GetRandomColor( &randomizer );
-		CycleColors( right_box, 1 );
+		CycleColors( right_box, 1, NULL );
 		AddTriangle( right_box );
 
 		// left triangle
@@ -341,7 +343,7 @@ void TriangleRooms()
 		left.vert[1].Set( center_top.x , center_p.y - 0.5f * size.x * room_config.box_width_p );
 		left.vert[2].Set( center_top.x , center_p.y + 0.5f * size.x * room_config.box_width_p );
 		left.color = GetRandomColor( &randomizer );
-		CycleColors( left, 1 );
+		CycleColors( left, 1, NULL );
 		AddTriangle( left );
 
 		// left triangle
@@ -350,7 +352,7 @@ void TriangleRooms()
 		right.vert[1].Set( center_top.x , center_p.y - 0.5f * size.x * room_config.box_width_p );
 		right.vert[2].Set( center_top.x , center_p.y + 0.5f * size.x * room_config.box_width_p );
 		right.color = GetRandomColor( &randomizer );
-		CycleColors( right, 2 );
+		CycleColors( right, 2, NULL );
 		AddTriangle( right );
 	}
 
@@ -387,7 +389,7 @@ void TriangleRooms()
 			top_box.vert[2] = Lerp( top_left, corners[0], high );
 			top_box.vert[3] = Lerp( top_right, corners[1], high );
 			top_box.color = GetRandomColor( &randomizer );
-			CycleColors( top_box, i + room_config.color_offset2 );
+			CycleColors( top_box, i + room_config.color_offset2, &randomizer );
 			AddTriangle( top_box );
 
 			
@@ -398,7 +400,7 @@ void TriangleRooms()
 			right_box.vert[2]  = Lerp( bottom_right, corners[2], low );
 			right_box.vert[3] = Lerp( bottom_right, corners[2], high );
 			right_box.color = GetRandomColor( &randomizer );
-			CycleColors( right_box, i + room_config.color_offset3 );
+			CycleColors( right_box, i + room_config.color_offset3, &randomizer );
 			AddTriangle( right_box );
 			
 
@@ -409,7 +411,7 @@ void TriangleRooms()
 			bottom_box.vert[2] = Lerp( bottom_left, corners[3], high );
 			bottom_box.vert[3] = Lerp( bottom_right, corners[2], high );
 			bottom_box.color = GetRandomColor( &randomizer );
-			CycleColors( bottom_box, i + room_config.color_offset4 );
+			CycleColors( bottom_box, i + room_config.color_offset4, &randomizer );
 			AddTriangle( bottom_box );
 
 			
@@ -420,7 +422,7 @@ void TriangleRooms()
 			left_box.vert[2]  = Lerp( bottom_left, corners[3], low );
 			left_box.vert[3] = Lerp( bottom_left, corners[3], high );
 			left_box.color = GetRandomColor( &randomizer );
-			CycleColors( left_box, i + room_config.color_offset1 );
+			CycleColors( left_box, i + room_config.color_offset1, &randomizer );
 			AddTriangle( left_box );
 		}
 	}
@@ -428,6 +430,105 @@ void TriangleRooms()
 }
 
 // ----------------------------------------------------------------------------
+
+#define CONFIG_STRIPES(list_) \
+	list_(float,			offset_x,				82.f,			MetaData( 0.f, 512.f ) ) \
+	list_(float,			offset_y,				78.f,			MetaData( 0.f, 512.f ) ) \
+	list_(float,			screen_width,			662.f,			MetaData( 1.f, 2048.f ) ) \
+	list_(float,			screen_height,			968.f,			MetaData( 1.f, 1596.f ) ) \
+	list_(float,			scale_x,				1.f,			MetaData( 0.0001f, 3.f ) ) \
+	list_(int,				stripe_count,			4,				MetaData( 0, 10 ) ) \
+	list_(float,			stripe_l1,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l2,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l3,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l4,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l5,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l6,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l7,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l8,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(float,			stripe_l9,				100.f,			MetaData( 0.f, 1024.f ) ) \
+	list_(int,				stripe_c1,				0,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c2,				1,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c3,				2,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c4,				3,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c5,				4,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c6,				5,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c7,				6,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c8,				7,				MetaData( 0, 10 ) ) \
+	list_(int,				stripe_c9,				8,				MetaData( 0, 10 ) ) \
+	list_(double,			seed,					1234,			MetaData( 0, 10000 ) ) \
+
+
+DEFINE_CONFIG_UI( ConfigStripes, CONFIG_STRIPES );
+#undef CONFIG_STRIPES
+
+ConfigStripes stripes_config;
+
+void DoStripes()
+{
+
+	triangles.clear();
+
+	const types::vector2 offset( stripes_config.offset_x, stripes_config.offset_y );
+	const types::vector2 size( stripes_config.screen_width, stripes_config.screen_height );
+
+	ceng::CLGMRandom randomizer;
+	randomizer.SetSeed( stripes_config.seed );
+
+	std::vector< float > lengths(10);
+	lengths[1] = stripes_config.stripe_l1;
+	lengths[2] = stripes_config.stripe_l2;
+	lengths[3] = stripes_config.stripe_l3;
+	lengths[4] = stripes_config.stripe_l4;
+	lengths[5] = stripes_config.stripe_l5;
+	lengths[6] = stripes_config.stripe_l6;
+	lengths[7] = stripes_config.stripe_l7;
+	lengths[8] = stripes_config.stripe_l8;
+	lengths[9] = stripes_config.stripe_l9;
+
+	std::vector< int > colors(10);
+	colors[1] = stripes_config.stripe_c1;
+	colors[2] = stripes_config.stripe_c2;
+	colors[3] = stripes_config.stripe_c3;
+	colors[4] = stripes_config.stripe_c4;
+	colors[5] = stripes_config.stripe_c5;
+	colors[6] = stripes_config.stripe_c6;
+	colors[7] = stripes_config.stripe_c7;
+	colors[8] = stripes_config.stripe_c8;
+	colors[9] = stripes_config.stripe_c9;
+
+	// add the center box
+	float pos_x = 0;
+	while( pos_x < stripes_config.screen_width )
+	{
+		for( int i = 1; i <= stripes_config.stripe_count; ++i )
+		{
+			float width = lengths[i];
+			int color = colors[i];
+
+			width *= stripes_config.scale_x;
+
+			// left box
+			Triangle box;
+			box.vert.resize( 4 );
+			box.vert[0].Set( pos_x, 0 ); 
+			box.vert[1].Set( pos_x + width, 0 ); 
+			box.vert[2].Set( pos_x, stripes_config.screen_height ); 
+			box.vert[3].Set( pos_x + width, stripes_config.screen_height ); 
+
+			CycleColors( box, color, NULL );
+			AddTriangle( box );
+
+			pos_x += width;
+
+			if( pos_x >= stripes_config.screen_width ) 
+				break;
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+
 
 void DrawTriangle( poro::IGraphics* graphics, const Triangle& t )
 {
@@ -470,7 +571,7 @@ void ProceduralTriangles::Init()
 
 	mOverlay = as::LoadSprite( "data/overlay.png" );
 
-	mDebugLayer->OpenConfig( room_config );
+	mDebugLayer->OpenConfig( stripes_config );
 	LoadColors( "data/colors/gradientish.png" );
 }
 
@@ -491,8 +592,9 @@ void ProceduralTriangles::Update( float dt )
 
 	// MouseButtonDown(poro::types::vec2(), 1);
 
-	TriangleRooms();
+	// TriangleRooms();
 	// TrianglesLine();
+	DoStripes();
 
 	GameMouse::GetSingletonPtr()->OnFrameEnd();
 
@@ -561,6 +663,32 @@ void ProceduralTriangles::OnKeyDown( int key, poro::types::charset unicode )
 		{
 			LoadColors( im_file );
 		}
+	}
+
+	if( key == SDLK_r )
+	{
+		int color_base = ceng::Random( 0, 256 );
+		stripes_config.stripe_c1 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c2 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c3 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c4 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c5 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c6 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c7 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c8 = color_base + ceng::Random( 0, 10 );
+		stripes_config.stripe_c9 = color_base + ceng::Random( 0, 10 );
+
+		stripes_config.stripe_l1 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l2 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l3 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l4 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l5 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l6 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l7 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l8 = ceng::Randomf( 10.f, 200.f );
+		stripes_config.stripe_l9 = ceng::Randomf( 10.f, 200.f );
+
+		stripes_config.stripe_count = ceng::Random( 1, 9 );
 	}
 
 }
